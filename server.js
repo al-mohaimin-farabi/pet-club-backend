@@ -63,6 +63,16 @@ async function run() {
     res.json(product);
   });
 
+  // update product
+  // app.put("/petfood/:id", async (req, res) => {
+  //   const id = req.params.id;
+  //   const filter = { _id: ObjectId(id) };
+  //   const options = { upsert: true };
+  //   const updateDoc = {$set:};
+  //   const result = await petFoodCollection.updateOne(filter,options,);
+  //   res.send(result);
+  // });
+
   app.get("/petaccAndToy", async (req, res) => {
     const cursor = petAccAndToyCollection.find({});
     const products = await cursor.toArray();
@@ -122,6 +132,7 @@ async function run() {
     res.json(result);
   });
 
+  // if user exsists
   app.put("/users", async (req, res) => {
     const user = req.body;
     const filter = { email: user.email };
@@ -130,6 +141,7 @@ async function run() {
     const result = await usersCollection.updateOne(filter, updateDoc, options);
     res.json(result);
   });
+
   app.put("/users/admin", async (req, res) => {
     const user = req.body;
     const requesterAccount = user.requester;
