@@ -64,14 +64,71 @@ async function run() {
   });
 
   // update product
-  // app.put("/petfood/:id", async (req, res) => {
-  //   const id = req.params.id;
-  //   const filter = { _id: ObjectId(id) };
-  //   const options = { upsert: true };
-  //   const updateDoc = {$set:};
-  //   const result = await petFoodCollection.updateOne(filter,options,);
-  //   res.send(result);
-  // });
+  app.put("/petfood/:id", async (req, res) => {
+    let img;
+    if (req.files) {
+      const encodedPic = req.files.img.data.toString("base64");
+      const imageBuffer = Buffer.from(encodedPic, "base64");
+      img = imageBuffer;
+    } else {
+      img = req.body.img;
+    }
+    const id = req.params.id;
+    const filter = { _id: ObjectId(id) };
+    const options = { upsert: false };
+
+    const data = {
+      animal: req.body.animal,
+      title: req.body.title,
+      brand: req.body.brand,
+      price: req.body.price,
+      stock: req.body.stock,
+      img: img,
+    };
+    console.log(data);
+
+    const updateDoc = { $set: data };
+
+    const result = await petFoodCollection.updateOne(
+      filter,
+      updateDoc,
+      options
+    );
+    console.log(result);
+    res.send(result);
+  });
+  app.put("/petaccAndToy/:id", async (req, res) => {
+    let img;
+    if (req.files) {
+      const encodedPic = req.files.img.data.toString("base64");
+      const imageBuffer = Buffer.from(encodedPic, "base64");
+      img = imageBuffer;
+    } else {
+      img = req.body.img;
+    }
+    const id = req.params.id;
+    const filter = { _id: ObjectId(id) };
+    const options = { upsert: false };
+
+    const data = {
+      animal: req.body.animal,
+      title: req.body.title,
+      price: req.body.price,
+      stock: req.body.stock,
+      img: img,
+    };
+    console.log(data);
+
+    const updateDoc = { $set: data };
+
+    const result = await petAccAndToyCollection.updateOne(
+      filter,
+      updateDoc,
+      options
+    );
+    console.log(result);
+    res.send(result);
+  });
 
   app.get("/petaccAndToy", async (req, res) => {
     const cursor = petAccAndToyCollection.find({});
