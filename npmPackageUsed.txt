@@ -1,0 +1,6 @@
+express
+cors
+dotenv
+express-fileupload
+monogdb
+nodemon

@@ -85,7 +85,7 @@ async function run() {
       stock: req.body.stock,
       img: img,
     };
-    console.log(data);
+    // console.log(data);
 
     const updateDoc = { $set: data };
 
