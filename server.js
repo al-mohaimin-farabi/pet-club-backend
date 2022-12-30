@@ -4,6 +4,7 @@ const cors = require("cors");
 const { MongoClient } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 const fileUpload = require("express-fileupload");
+const { query } = require("express");
 require("dotenv").config();
 
 const port = process.env.PORT || 5000;
@@ -170,11 +171,14 @@ async function run() {
     res.send(blogs);
   });
 
-  app.get("/blogs/:id", async (req, res) => {
-    const id = req.params.id;
-    const query = { _id: ObjectId(id) };
-    const blog = await blogsCollection.findOne(query);
-    res.json(blog);
+  app.get("/blogs/:blogTitle", async (req, res) => {
+    const query = req.params.blogTitle;
+    const cursor = blogsCollection.find({});
+    const blogs = await cursor.toArray();
+    const filterData = blogs.find((blog) => blog.blogTitle === query);
+    // console.log(filterData.blogTitle, filterData.authorName);
+
+    res.json(filterData);
   });
 
   app.get("/users", async (req, res) => {
