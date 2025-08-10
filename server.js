@@ -4,6 +4,7 @@ const cors = require("cors");
 const { MongoClient } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 const fileUpload = require("express-fileupload");
+const admin = require("firebase-admin");
 const { query } = require("express");
 require("dotenv").config();
 // const emailjs = require("@emailjs/nodejs");
@@ -29,6 +30,66 @@ const client = new MongoClient(url, {
 //     pass: process.env.EMAIL_PASS, // Your email password or App Password (for Gmail)
 //   },
 // });
+
+const serviceAccount = require("./serviceAccountKey.json"); // Path to your Firebase service account key
+
+// Initialize Firebase Admin SDK with your service account key
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const verifyToken = async (req, res, next) => {
+  // Extract Firebase ID token from the Authorization header
+  const token = req.headers.authorization?.split("Bearer ")[1]; // Token comes as "Bearer <ID_TOKEN>"
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized, no token provided" });
+  }
+
+  try {
+    // Verify the ID token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = decodedToken; // Attach the decoded token to the request object
+    next(); // Continue to the next middleware or route handler
+  } catch (error) {
+    console.error("Error verifying token:", error);
+    return res.status(401).json({ message: "Unauthorized, invalid token" });
+  }
+};
+
+// Middleware to verify Firebase ID token and check for role in MongoDB
+const verifyTokenAndRole = async (req, res, next) => {
+  const token = req.headers.authorization?.split("Bearer ")[1]; // Extract token from Authorization header
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized, no token provided" });
+  }
+
+  try {
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = decodedToken; // Attach the decoded token to the request object
+
+    // Check if the user exists in MongoDB and has the 'admin' role
+    const user = await usersCollection.findOne({ email: req.user.email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "admin") {
+      // Check if user is an admin
+      return res
+        .status(403)
+        .json({ message: "Forbidden, user is not an admin" });
+    }
+
+    next(); // User is authenticated and authorized as an admin
+  } catch (error) {
+    console.error("Error verifying token:", error);
+    return res.status(401).json({ message: "Unauthorized, invalid token" });
+  }
+};
 
 async function run() {
   await client.connect();
@@ -461,15 +522,17 @@ async function run() {
     res.json(filterData);
   });
 
-  app.get("/users", async (req, res) => {
+  app.get("/users", verifyTokenAndRole, async (req, res) => {
     console.log("\n------- Hit /users route -------");
+
+    // Fetch all users from MongoDB
     const cursor = usersCollection.find({});
     const users = await cursor.toArray();
     console.log("Fetched users");
     res.send(users);
   });
 
-  app.post("/users", async (req, res) => {
+  app.post("/users", verifyToken, async (req, res) => {
     console.log("\n------- Hit /users POST route -------");
     const user = req.body;
     console.log("Data for user insertion:", user);
@@ -478,7 +541,7 @@ async function run() {
     res.json(result);
   });
 
-  app.put("/users", async (req, res) => {
+  app.put("/users", verifyToken, async (req, res) => {
     console.log("\n------- Hit /users PUT route -------");
     const user = req.body;
     console.log("Data for user update:", user);
@@ -490,7 +553,7 @@ async function run() {
     res.json(result);
   });
 
-  app.put("/users/tempadmin", async (req, res) => {
+  app.put("/users/tempadmin", verifyToken, async (req, res) => {
     console.log("\n------- Hit /users/tempadmin PUT route -------");
     const user = req.body;
     const requesterAccount = user.requester;
@@ -546,7 +609,7 @@ async function run() {
     }
   });
 
-  app.put("/users/admin", async (req, res) => {
+  app.put("/users/admin", verifyToken, async (req, res) => {
     console.log("\n------- Hit /users/admin PUT route -------");
     const user = req.body;
     const requesterAccount = user.requester;
@@ -577,7 +640,7 @@ async function run() {
     }
   });
 
-  app.get("/users/:email/roles", async (req, res) => {
+  app.get("/users/:email/roles", verifyToken, async (req, res) => {
     console.log("\n------- Hit /users/:email/roles route -------");
     const email = req.params.email;
     console.log("Checking admin status for email:", email);
