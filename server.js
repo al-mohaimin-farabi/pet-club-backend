@@ -31,7 +31,10 @@ const client = new MongoClient(url, {
 //   },
 // });
 
-const serviceAccount = require("./serviceAccountKey.json"); // Path to your Firebase service account key
+// Path to your Firebase service account key
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+// Path to your Firebase service account key
 
 // Initialize Firebase Admin SDK with your service account key
 admin.initializeApp({
