@@ -620,7 +620,7 @@ async function run() {
 
     if (user) {
       console.log(
-        "Checking requester account for admin role:",
+        "Checking requester account for admin role-:",
         requesterAccount
       );
       const checkRequesterAccount = await usersCollection.findOne({
