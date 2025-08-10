@@ -6,6 +6,8 @@ const ObjectId = require("mongodb").ObjectId;
 const fileUpload = require("express-fileupload");
 const { query } = require("express");
 require("dotenv").config();
+// const emailjs = require("@emailjs/nodejs");
+// const nodemailer = require("nodemailer");
 
 const port = process.env.PORT || 5000;
 app.use(cors());
@@ -18,6 +20,15 @@ const client = new MongoClient(url, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
+// Nodemailer transport configuration
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: process.env.EMAIL_USER, // Your email address (e.g., your-email@gmail.com)
+//     pass: process.env.EMAIL_PASS, // Your email password or App Password (for Gmail)
+//   },
+// });
 
 async function run() {
   await client.connect();
@@ -47,7 +58,23 @@ async function run() {
       price: req.body.price,
       stock: req.body.stock,
       img: imageBuffer,
+      addedBy: req?.body?.addedBy,
     };
+
+    console.log("Data prepared for pet food insertion:", req?.body);
+
+    if (req?.body?.addedBy === "temp_admin") {
+      console.log("adding temp_admin details to data for logging purposes");
+      const email = req?.body?.email;
+      const name = req?.body?.name;
+
+      if (email && name) {
+        data.addedByDetails = { email, name };
+      } else {
+        console.warn("Missing email or name for temp_admin");
+      }
+    }
+
     const result = await petFoodCollection.insertOne(data);
     console.log("Pet food added");
     res.send(result);
@@ -225,7 +252,20 @@ async function run() {
       price: req.body.price,
       stock: req.body.stock,
       img: imageBuffer,
+      addedBy: req?.body?.addedBy,
     };
+
+    if (req?.body?.addedBy === "temp_admin") {
+      console.log("adding temp_admin details to data for logging purposes");
+      const email = req?.body?.email;
+      const name = req?.body?.name;
+
+      if (email && name) {
+        data.addedByDetails = { email, name };
+      } else {
+        console.warn("Missing email or name for temp_admin");
+      }
+    }
 
     console.log("Data prepared for pet accessory or toy insertion:", data);
 
@@ -624,6 +664,100 @@ async function run() {
     console.log("Deleted order with ID:", id);
     res.json(result);
   });
+
+  // emailjs
+  // app.post("/emailjs/subscribe", async (req, res) => {
+  //   console.log("\n------- Hit /emailjs/subscribe route -------");
+  //   const { email, name } = req.body;
+
+  //   if (!email) {
+  //     return res.status(400).send("Email required!");
+  //   }
+
+  //   try {
+  //     // Extract EmailJS environment variables into a constant
+  //     const service_id = process.env.EMAILJS_SERVICE_ID;
+  //     const template_id = process.env.EMAILJS_TEMPLATE_ID;
+  //     const user_id = process.env.EMAILJS_USER_ID;
+
+  //     // Send email using EmailJS
+  //     const response = await emailjs.send(
+  //       service_id,
+  //       template_id,
+
+  //       {
+  //         email: email,
+  //         name: name,
+  //       },
+  //       {
+  //         publicKey: user_id,
+  //       }
+  //     );
+
+  //     // Send success response
+  //     res.status(200).send("Subscription successful!");
+  //     console.log("Email sent successfully:", response);
+  //   } catch (error) {
+  //     console.error("Error sending email:", error);
+  //     res.status(500).send("Error sending email. Please try again.");
+  //   }
+  // });
+
+  // Nodemailer email subscription endpoint
+  // app.post("/newsletter/subscribe", async (req, res) => {
+  //   const { email, name } = req.body;
+
+  //   if (!email || !name) {
+  //     return res.status(400).json({ message: "Email and name are required." });
+  //   }
+
+  //   // Beautiful HTML Email Template
+  //   const emailTemplate = `
+  //     <html>
+  //       <body style="font-family: Arial, sans-serif; background-color: #f7f7f7; color: #333;">
+  //         <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+  //           <h2 style="color: #4CAF50;">Hey ${name},</h2>
+  //           <p style="font-size: 16px; line-height: 1.5;">
+  //             Thank you for subscribing to our newsletter! 🎉 We're excited to have you as part of our community!
+  //           </p>
+  //           <p style="font-size: 16px; line-height: 1.5;">
+  //             You’ll now receive our latest updates, promotions, and exciting news right in your inbox.
+  //           </p>
+  //           <hr style="border: 1px solid #eee;">
+  //           <p style="font-size: 14px; color: #777;">
+  //             If you did not subscribe to this list, please ignore this email. <br />
+  //             You can unsubscribe at any time by clicking the link at the bottom of our emails.
+  //           </p>
+  //           <div style="text-align: center; margin-top: 20px;">
+  //             <a href="https://www.yourwebsite.com" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-size: 16px;">Visit Our Website</a>
+  //           </div>
+  //         </div>
+  //       </body>
+  //     </html>
+  //   `;
+
+  //   // Email options
+  //   const mailOptions = {
+  //     from: process.env.EMAIL_USER, // Sender address
+  //     to: email, // Recipient's email
+  //     subject: `Thank You for Subscribing to Our Newsletter!`, // Subject line
+  //     html: emailTemplate, // HTML body content
+  //   };
+
+  //   try {
+  //     // Send email using Nodemailer
+  //     const info = await transporter.sendMail(mailOptions);
+
+  //     // Send success response
+  //     res.status(200).json({ message: "Subscription successful!" });
+  //     console.log("Email sent successfully:", info);
+  //   } catch (error) {
+  //     console.error("Error sending email:", error);
+  //     res
+  //       .status(500)
+  //       .send("We are having some issues subscribing you to our newsletter.");
+  //   }
+  // });
 }
 
 run().catch(console.dir);
