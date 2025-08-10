@@ -618,7 +618,7 @@ async function run() {
     const requesterAccount = user.requester;
     const email = user.email;
 
-    if (user) {
+    if (user ) {
       console.log(
         "Checking requester account for admin role-:",
         requesterAccount
