@@ -34,19 +34,21 @@ const client = new MongoClient(url, {
 
 // Path to your Firebase service account key
 
-// const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 // const serviceAccount = "/etc/secrets/serviceAccountKey.json";
 // Read the service account key from the secret file at runtime
-const serviceAccount = JSON.parse(
-  fs.readFileSync("/etc/secrets/serviceAccountKey.json", "utf8")
-);
+// const serviceAccount = JSON.parse(
+//   fs.readFileSync("/etc/secrets/serviceAccountKey.json", "utf8")
+// );
 
 // Initialize Firebase Admin SDK with your service account key
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+// token verify
 const verifyToken = async (req, res, next) => {
+  console.log("\n------- Verifying token -------");
   // Extract Firebase ID token from the Authorization header
   const token = req.headers.authorization?.split("Bearer ")[1]; // Token comes as "Bearer <ID_TOKEN>"
 
@@ -67,6 +69,7 @@ const verifyToken = async (req, res, next) => {
 
 // Middleware to verify Firebase ID token and check for role in MongoDB
 const verifyTokenAndRole = async (req, res, next) => {
+  console.log("\n------- Verifying token role-------");
   const token = req.headers.authorization?.split("Bearer ")[1]; // Extract token from Authorization header
 
   if (!token) {

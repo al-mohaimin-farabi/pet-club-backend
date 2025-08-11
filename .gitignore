@@ -1,3 +1,4 @@
+# .gitignore
 # Ignore Firebase service account key
 serviceAccountKey.json
 
